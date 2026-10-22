@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Trivy - itzg/minecraft-server
+        id: trivy_mc
+        continue-on-error: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.MC_IMAGE }}
@@ -38,6 +40,8 @@ jobs:
           trivyignores: .trivyignore
 
       - name: Trivy - itzg/mc-backup
+        id: trivy_backup
+        continue-on-error: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.BACKUP_IMAGE }}
@@ -45,6 +49,12 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           trivyignores: .trivyignore
+
+      - name: Verifier les resultats Trivy
+        if: steps.trivy_mc.outcome == 'failure' || steps.trivy_backup.outcome == 'failure'
+        run: |
+          echo "Au moins un scan Trivy a trouve une vulnerabilite CRITICAL corrigeable non ignoree." >&2
+          exit 1
 
   stack:
     needs: [secrets, images]

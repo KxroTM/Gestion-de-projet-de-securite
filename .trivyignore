@@ -16,6 +16,10 @@ CVE-2026-72399
 CVE-2026-74345
 CVE-2026-74394
 
+# -- scala-library 2.13.1 embarquee dans itzg/minecraft-server:2026.10.0-java25 --
+# Deserialization gadget chain. Meme situation : aucun tag date plus recent.
+CVE-2022-36944
+
 # -- BouncyCastle 1.84 dans le jar Paper 26.1.2 build 74 --
 # Paper a cesse de builder la 26.1.2 (remplacee par 26.2/26.3, elles-memes non
 # supportees par mineflayer a ce jour) : build 74 est final, aucun correctif ne
