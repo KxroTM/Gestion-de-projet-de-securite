@@ -27,6 +27,21 @@ CVE-2022-36944
 # de chiffrement principal du protocole Minecraft, juste une dependance embarquee.
 CVE-2026-8763
 
+# -- rclone embarque dans itzg/mc-backup:2026.10.1 (non utilise par cette stack) --
+# L'image embarque rclone pour supporter des remotes "rclone:...", mais notre
+# configuration utilise le backend B2 natif de restic ("b2:<bucket>:<chemin>"),
+# jamais le prefixe "rclone:". Ce code n'est jamais execute par notre stack.
+CVE-2026-41176
+CVE-2026-41179
+CVE-2026-49980
+CVE-2026-88018
+CVE-2026-88044
+
+# -- grpc-go embarque dans itzg/mc-backup:2026.10.1 --
+# Dependance de rclone (voir ci-dessus), meme situation : code non exerce par notre
+# configuration (pas de remote "rclone:").
+CVE-2026-33186
+
 # -- Go stdlib (crypto/tls) dans itzg/mc-backup:2026.10.1 --
 # Aucune nouvelle version de l'image publiee depuis. Sans impact en local/CI (pas
 # de connexion TLS sortante, depot restic sur volume local). En production avec

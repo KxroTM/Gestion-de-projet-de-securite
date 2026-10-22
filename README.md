@@ -112,24 +112,33 @@ Déclenché sur `push` et `pull_request`. Trois jobs :
 
 ## Vulnérabilités connues et acceptées (`.trivyignore`)
 
-Au 2026-10-22, Trivy signale 3 CVE CRITICAL corrigeables sans qu'aucun tag Docker
+Au 2026-10-22, Trivy signale des CVE CRITICAL corrigeables sans qu'aucun tag Docker
 figé ne soit disponible pour les corriger (seuls des tags flottants comme `java25`
 ou `latest` ont été reconstruits avec le correctif — exclus par la règle "jamais
 `latest`"). Elles sont listées dans `.trivyignore` avec justification, plutôt que de
 bloquer indéfiniment le pipeline sur un correctif qui ne dépend pas de ce dépôt :
 
-- **7 CVE noyau Linux** (`linux-libc-dev`, couche OS de `itzg/minecraft-server`) :
-  KVM imbriqué, RDMA/InfiniBand, cible NVMe-over-TCP — aucun de ces sous-systèmes
-  n'est utilisé par cette stack, risque pratique quasi nul.
+**Dans `itzg/minecraft-server:2026.10.0-java25` :**
+- **7 CVE noyau Linux** (`linux-libc-dev`, couche OS) : KVM imbriqué,
+  RDMA/InfiniBand, cible NVMe-over-TCP — aucun de ces sous-systèmes n'est utilisé
+  par cette stack, risque pratique quasi nul.
 - **CVE-2026-8763 (BouncyCastle 1.84)** dans le `.jar` de Paper 26.1.2 build 74 :
   PaperMC a cessé de builder cette version (remplacée par 26.2/26.3, non supportées
   par mineflayer à ce jour — vérifié sur `testedVersions`), aucun correctif ne
   viendra. BouncyCastle n'est pas le mécanisme de chiffrement principal du
   protocole Minecraft.
-- **CVE-2025-68121 (Go `crypto/tls`)** dans `itzg/mc-backup:2026.10.1` : aucune
-  nouvelle image publiée. Sans impact en local/CI (pas de connexion TLS sortante,
-  dépôt restic local) ; en production avec Backblaze B2, le contenu reste protégé
-  par le chiffrement restic indépendamment du TLS.
+- **CVE-2022-36944 (scala-library 2.13.1)** : même situation, aucun tag daté plus
+  récent disponible.
+
+**Dans `itzg/mc-backup:2026.10.1` :** aucune nouvelle image publiée depuis.
+- **5 CVE rclone** (accès non autorisé, RCE, contournement d'authentification) et
+  **1 CVE grpc-go** (dépendance de rclone) : l'image embarque rclone pour supporter
+  des remotes `rclone:...`, mais notre configuration utilise exclusivement le
+  backend B2 natif de restic (`RESTIC_REPOSITORY=b2:<bucket>:<chemin>`), jamais le
+  préfixe `rclone:`. Ce code n'est jamais exécuté par cette stack.
+- **CVE-2025-68121 (Go `crypto/tls`)** : sans impact en local/CI (pas de connexion
+  TLS sortante, dépôt restic local) ; en production avec Backblaze B2, le contenu
+  reste protégé par le chiffrement restic indépendamment du TLS.
 
 À revoir dès qu'un nouveau tag daté de l'une de ces deux images est publié, ou que
 mineflayer ajoute le support de 26.2/26.3.
