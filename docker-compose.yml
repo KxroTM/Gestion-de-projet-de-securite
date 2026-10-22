@@ -16,10 +16,16 @@ services:
       ENABLE_RCON: "TRUE"
       RCON_PASSWORD: ${RCON_PASSWORD}
       RCON_PORT: "25575"
+      # AuthMe 6.0.1 (E07) : URL de release GitHub figee (pas de "latest"), jar Paper dedie.
+      PLUGINS: "https://github.com/AuthMe/AuthMeReloaded/releases/download/6.0.1/AuthMe-6.0.1-Paper.jar"
     ports:
       - "25565:25565"
     volumes:
       - mc_data:/data
+      # AuthMe (E07) : desactive les dialogues graphiques pre-join/post-join (necessitent
+      # un vrai client 1.21.11+/Paper) au profit du flux classique par chat (/login, /register),
+      # seul compatible avec un bot headless comme mineflayer.
+      - ./config/authme-config.yml:/data/plugins/AuthMe/config.yml
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mc-health"]

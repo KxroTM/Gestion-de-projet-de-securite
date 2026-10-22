@@ -19,6 +19,7 @@ ROWS = [
     ("DS03", "test_encryption.sh", "encryption"),
     ("DS05", "test_secrets_detection.sh", "secrets_detection"),
     ("E08 / DS01", "test_backup_frequency.sh", "backup_frequency"),
+    ("E07", "test_auth.js", "auth"),
 ]
 
 

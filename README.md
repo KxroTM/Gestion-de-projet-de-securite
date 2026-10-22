@@ -1,9 +1,10 @@
 # minecraft-noel
 
 Stack Docker pour un serveur Minecraft Paper (10-20 joueurs), avec sauvegardes
-chiffrées restic et une suite de tests de sécurité automatiques exécutés à chaque
-push via GitHub Actions. Projet scolaire — hors périmètre pour l'instant : bot
-Discord, plugin d'authentification, déploiement sur le VPS.
+chiffrées restic, un plugin d'authentification (AuthMe) et une suite de tests de
+sécurité automatiques exécutés à chaque push via GitHub Actions. Projet scolaire —
+hors périmètre pour l'instant : bot Discord, déploiement sur le VPS, skins/visuel
+en jeu.
 
 ## Lancement local
 
@@ -27,6 +28,7 @@ bash tests/test_backup_restore.sh
 bash tests/test_encryption.sh
 bash tests/test_secrets_detection.sh
 bash tests/test_backup_frequency.sh   # ~5 min, verifie le planificateur de sauvegardes
+node tests/test_auth.js
 
 docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v
 ```
@@ -80,6 +82,23 @@ UUID v3) dans `WHITELIST`. C'est ce que fait `docker-compose.yml`. Consequence :
 champ `name` de `whitelist.json` reste vide (seul l'UUID est utilisé pour la
 correspondance), ce qui est normal.
 
+## Plugin d'authentification AuthMe (E07)
+
+Installé via `PLUGINS=https://github.com/AuthMe/AuthMeReloaded/releases/download/6.0.1/AuthMe-6.0.1-Paper.jar`
+dans `docker-compose.yml` (URL de release GitHub figée, jamais une URL "latest").
+Chaque joueur doit s'enregistrer/se connecter (`/register`, `/login <mot de passe>`) ;
+tant qu'il ne l'a pas fait, le chat (et plus généralement l'interaction) est refusé,
+et un mauvais mot de passe entraîne un kick immédiat (`kickOnWrongPassword: true`).
+
+**Piège rencontré** : AuthMe 6.x affiche par défaut une boîte de dialogue graphique
+pendant la phase de pré-connexion (`dialog.preJoin.enable: true`, fonctionnalité
+native Paper/Folia 1.21.11+). Un bot headless comme mineflayer ne peut pas répondre
+à ce dialogue : la connexion reste bloquée indéfiniment et l'événement `spawn` ne se
+déclenche jamais. `config/authme-config.yml` désactive `dialog.preJoin.enable` et
+`dialog.postJoin.enable` pour revenir au flux classique par chat, seul testable avec
+un bot. Ce fichier est monté directement sur `/data/plugins/AuthMe/config.yml`
+(remplace la config auto-générée par le plugin au premier démarrage).
+
 ## Tests et correspondance avec les exigences
 
 | Exigence | Test                        | Ce qui est vérifié |
@@ -92,6 +111,7 @@ correspondance), ce qui est normal.
 | DS03     | `tests/test_encryption.sh`   | `restic snapshots` échoue avec un mauvais mot de passe ; le nom du niveau n'apparaît en clair dans aucun fichier du dépôt restic. |
 | DS05     | `tests/test_secrets_detection.sh` | Un faux token GitHub injecté dans un dossier de test est bien détecté par gitleaks (contrôle actif de la détection, en plus du job `secrets` qui scanne le vrai historique à chaque push). |
 | E08 / DS01 | `tests/test_backup_frequency.sh` | Avec un intervalle réduit à 1 min le temps du test, au moins 4 sauvegardes automatiques (pas de déclenchement manuel) apparaissent en ~5 min, espacées d'environ 1 min — prouve que le planificateur fonctionne sans attendre 24h. |
+| E07      | `tests/test_auth.js`         | Un compte ne peut pas être usurpé sans mot de passe : chat refusé avant authentification, mauvais mot de passe → kick immédiat, bon mot de passe → accès accordé (contrôle positif). Plugin AuthMe 6.0.1. |
 
 Chaque test a été vérifié "cassable" pendant le développement (ex. publier le port
 RCON fait échouer DS09, whitelister l'intrus fait échouer E06, désynchroniser le
@@ -189,6 +209,6 @@ et visible dans Settings → Branches, simplement non contraignante pour l'admin
 
 ## Critère de fin
 
-Pipeline entièrement vert sur `main`, récapitulatif à 8 lignes "OK" (DS09, E06, E09,
-E08, DS07, DS03, DS05, E08/DS01), et chaque test déjà vu en échec au moins une fois pendant le
-contrôle de non-triche décrit plus haut.
+Pipeline entièrement vert sur `main`, récapitulatif à 9 lignes "OK" (DS09, E06, E09,
+E08, DS07, DS03, DS05, E08/DS01, E07), et chaque test déjà vu en échec au moins une
+fois pendant le contrôle de non-triche décrit plus haut.
