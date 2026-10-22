@@ -143,6 +143,7 @@ jobs:
         if: always()
         env:
           IMAGES_JOB_RESULT: ${{ needs.images.result }}
+          SECRETS_JOB_RESULT: ${{ needs.secrets.result }}
         run: python3 tests/lib/write_summary.py
 
       - name: Publier reports/ en artefact

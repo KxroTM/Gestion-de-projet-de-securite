@@ -1,7 +1,11 @@
 # Risques CRITICAL acceptes et documentes (voir README.md, section "Vulnerabilites
-# connues et acceptees"). Chaque entree = aucun tag Docker fige ne corrige le CVE a
-# ce jour (verifie le 2026-10-22) ; a retirer de ce fichier dès qu'un nouveau tag
-# date corrige le probleme.
+# connues et acceptees" et le tableau des risques). Chaque entree = aucun tag
+# Docker fige ne corrige le CVE a ce jour.
+#
+# Derniere revue   : 2026-10-22
+# Prochaine revue   : 2026-10-29 (hebdomadaire - cf tableau des risques du README)
+# A chaque revue : reverifier les tags Docker Hub des deux images et retirer toute
+# ligne dont le correctif est enfin publie.
 #
 # -- itzg/minecraft-server:2026.10.0-java25 : couche OS (linux-libc-dev) --
 # Seul le tag flottant "java25" a ete reconstruit avec le correctif noyau ; pas de

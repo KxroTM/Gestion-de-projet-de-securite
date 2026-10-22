@@ -44,12 +44,19 @@ def main():
             all_ok = False
         lines.append(f"| {requirement} | {test_name} | {result} | {duration}s |")
 
-    # DS05 : resultat du job "images" (scan Trivy) de la meme execution.
-    images_result = os.environ.get("IMAGES_JOB_RESULT", "unknown")
-    ds05_result = "OK" if images_result == "success" else "FAIL"
+    # DS05 : aucun secret dans le depot -> resultat du job "secrets" (gitleaks).
+    secrets_result = os.environ.get("SECRETS_JOB_RESULT", "unknown")
+    ds05_result = "OK" if secrets_result == "success" else "FAIL"
     if ds05_result != "OK":
         all_ok = False
-    lines.append(f"| DS05 | Trivy (job images) | {ds05_result} | - |")
+    lines.append(f"| DS05 | gitleaks (job secrets) | {ds05_result} | - |")
+
+    # Controle supplementaire, sans exigence numerotee dediee : scan Trivy des images.
+    images_result = os.environ.get("IMAGES_JOB_RESULT", "unknown")
+    images_ok = "OK" if images_result == "success" else "FAIL"
+    if images_ok != "OK":
+        all_ok = False
+    lines.append(f"| -    | Scan des images (Trivy, job images) | {images_ok} | - |")
 
     output = "\n".join(lines) + "\n"
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")

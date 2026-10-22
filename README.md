@@ -84,19 +84,20 @@ correspondance), ce qui est normal.
 | -------- | ---------------------------- | --- |
 | DS09     | `tests/test_ports.sh`        | Seul le port 25565 est publié ; `nmap` confirme 25565 ouvert et 25575 fermé. |
 | E06      | `tests/test_whitelist.js`    | `Test_Intrus` est refusé (message de whitelist) ; `Test_Premium` se connecte (contrôle positif). |
-| E09      | `tests/test_restart.sh`      | Après `docker kill mc`, le conteneur redevient `healthy` en moins de 180s. |
+| E09      | `tests/test_restart.sh`      | Après un crash simulé (`pkill -9 java` dans le conteneur), `mc` redevient `healthy` en moins de 180s. |
 | E08      | `tests/test_backup_restore.sh` | Sauvegarde restic déclenchée, puis restauration ; durée < 900s. |
 | DS07     | `tests/test_backup_restore.sh` | Même test : empreinte SHA-256 du monde identique avant/après restauration, bloc témoin retrouvé par RCON. |
 | DS03     | `tests/test_encryption.sh`   | `restic snapshots` échoue avec un mauvais mot de passe ; le nom du niveau n'apparaît en clair dans aucun fichier du dépôt restic. |
-| DS05     | Job `images` (Trivy, CI)     | Aucune vulnérabilité CRITICAL corrigeable dans les images utilisées. |
+| DS05     | Job `secrets` (gitleaks, CI) | Aucun secret dans le dépôt (historique complet scanné à chaque push). |
 
 Chaque test a été vérifié "cassable" pendant le développement (ex. publier le port
 RCON fait échouer DS09, whitelister l'intrus fait échouer E06, désynchroniser le
 monde entre la sauvegarde et la restauration fait échouer E08/DS07, pointer vers un
 contenu non chiffré fait échouer DS03).
 
-Le job `secrets` (gitleaks, historique complet) est une porte supplémentaire de la
-CI mais ne correspond à aucune exigence numérotée listée ci-dessus.
+Le job `images` (Trivy, scan des deux images utilisées) est un contrôle de sécurité
+supplémentaire de la CI, sans exigence numérotée dédiée dans le cahier des charges
+d'origine.
 
 ## Pipeline CI (`.github/workflows/security.yml`)
 
@@ -109,6 +110,14 @@ Déclenché sur `push` et `pull_request`. Trois jobs :
   et arrête systématiquement la stack (`docker compose down -v`) même en cas
   d'échec. Les images Docker et les `node_modules` des tests sont mis en cache entre
   les exécutions.
+
+## Tableau des risques
+
+| Risque | Impact | Réponse prévue |
+| --- | --- | --- |
+| CVE critiques sans correctif publié dans les images Docker utilisées (`itzg/minecraft-server`, `itzg/mc-backup`) | Moyen | Risque accepté et documenté dans `.trivyignore`, revu chaque semaine (prochaine revue : 2026-10-29) ; image mise à jour dès qu'un correctif sort sous un tag figé. |
+| Mineflayer ne supporte pas encore Minecraft 26.2/26.3 | Faible | Reste sur Paper 26.1.2 (dernier build compatible) ; réévaluer la version dès que `testedVersions` de mineflayer est mis à jour. |
+| Moteur Docker Desktop local ne respectant pas toujours la restart policy après un arrêt externe | Faible (local uniquement) | Les tests utilisent un crash interne (`pkill`) plutôt qu'un arrêt externe ; validé comme non reproductible sur la CI (Linux natif). |
 
 ## Vulnérabilités connues et acceptées (`.trivyignore`)
 
