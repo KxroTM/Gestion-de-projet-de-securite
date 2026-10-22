@@ -25,6 +25,7 @@ node tests/test_whitelist.js
 bash tests/test_restart.sh
 bash tests/test_backup_restore.sh
 bash tests/test_encryption.sh
+bash tests/test_secrets_detection.sh
 
 docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v
 ```
@@ -88,7 +89,7 @@ correspondance), ce qui est normal.
 | E08      | `tests/test_backup_restore.sh` | Sauvegarde restic déclenchée, puis restauration ; durée < 900s. |
 | DS07     | `tests/test_backup_restore.sh` | Même test : empreinte SHA-256 du monde identique avant/après restauration, bloc témoin retrouvé par RCON. |
 | DS03     | `tests/test_encryption.sh`   | `restic snapshots` échoue avec un mauvais mot de passe ; le nom du niveau n'apparaît en clair dans aucun fichier du dépôt restic. |
-| DS05     | Job `secrets` (gitleaks, CI) | Aucun secret dans le dépôt (historique complet scanné à chaque push). |
+| DS05     | `tests/test_secrets_detection.sh` | Un faux token GitHub injecté dans un dossier de test est bien détecté par gitleaks (contrôle actif de la détection, en plus du job `secrets` qui scanne le vrai historique à chaque push). |
 
 Chaque test a été vérifié "cassable" pendant le développement (ex. publier le port
 RCON fait échouer DS09, whitelister l'intrus fait échouer E06, désynchroniser le
@@ -174,12 +175,15 @@ exclusivement sur le réseau Docker interne).
 - Relecture humaine des pull requests avant fusion.
 - Accord du professeur avant toute mise en production réelle.
 
-## Protection de branche à activer sur GitHub (DS04)
+## Protection de branche sur GitHub (DS04)
 
-Sur `main` : pull request obligatoire avant fusion, au moins 1 approbation requise,
-et le pipeline CI (`security.yml`) doit être vert. Ces règles se configurent dans
-GitHub (Settings → Branches → Branch protection rules) et ne sont pas automatisables
-depuis ce dépôt.
+Activée sur `main` : pull request obligatoire, 1 approbation requise, les 3 jobs
+(`secrets`/`images`/`stack`) doivent être verts avant fusion. Démontré avec la PR
+de démo #1 (fermée après capture) : jobs verts mais fusion bloquée tant qu'aucune
+revue n'est approuvée. `enforce_admins` a été désactivé juste après la démo (seul
+compte sur ce dépôt : personne ne peut jamais approuver sa propre PR, sinon plus
+aucun changement ne pourrait jamais atteindre `main`) ; la règle reste configurée
+et visible dans Settings → Branches, simplement non contraignante pour l'admin.
 
 ## Critère de fin
 

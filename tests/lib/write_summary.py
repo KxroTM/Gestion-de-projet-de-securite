@@ -17,6 +17,7 @@ ROWS = [
     ("E08", "test_backup_restore.sh", "backup_restore"),
     ("DS07", "test_backup_restore.sh", "backup_restore"),
     ("DS03", "test_encryption.sh", "encryption"),
+    ("DS05", "test_secrets_detection.sh", "secrets_detection"),
 ]
 
 
@@ -43,13 +44,6 @@ def main():
         if result != "OK":
             all_ok = False
         lines.append(f"| {requirement} | {test_name} | {result} | {duration}s |")
-
-    # DS05 : aucun secret dans le depot -> resultat du job "secrets" (gitleaks).
-    secrets_result = os.environ.get("SECRETS_JOB_RESULT", "unknown")
-    ds05_result = "OK" if secrets_result == "success" else "FAIL"
-    if ds05_result != "OK":
-        all_ok = False
-    lines.append(f"| DS05 | gitleaks (job secrets) | {ds05_result} | - |")
 
     # Controle supplementaire, sans exigence numerotee dediee : scan Trivy des images.
     images_result = os.environ.get("IMAGES_JOB_RESULT", "unknown")
