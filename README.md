@@ -186,3 +186,5 @@ depuis ce dépôt.
 Pipeline entièrement vert sur `main`, récapitulatif à 7 lignes "OK" (DS09, E06, E09,
 E08, DS07, DS03, DS05), et chaque test déjà vu en échec au moins une fois pendant le
 contrôle de non-triche décrit plus haut.
+
+<!-- PR de demo pour prouver que la protection de branche main fonctionne (DS04). -->
