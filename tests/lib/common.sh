@@ -33,6 +33,33 @@ wait_healthy() {
   done
 }
 
+# wait_restarted_and_healthy <container> [timeout_s=180]
+# Comme wait_healthy, mais exige en plus que StartedAt ait change par rapport a
+# l'appel, pour eviter de valider un "healthy" perime lu juste avant que Docker
+# n'ait eu le temps de constater le crash et de relancer le conteneur (course
+# observee en pratique : le premier sondage juste apres un crash simule peut
+# encore voir l'ancien statut "healthy").
+# Positionne WAIT_HEALTHY_SECONDS et retourne 0 si redemarre+healthy avant le
+# timeout, 1 sinon.
+wait_restarted_and_healthy() {
+  local container="$1" timeout="${2:-180}" old_started_at waited=0 status started_at
+  old_started_at="$(docker inspect -f '{{.State.StartedAt}}' "$container" 2>/dev/null || echo "")"
+  while true; do
+    started_at="$(docker inspect -f '{{.State.StartedAt}}' "$container" 2>/dev/null || echo "")"
+    status="$(docker inspect -f '{{.State.Health.Status}}' "$container" 2>/dev/null || echo "missing")"
+    if [ "$started_at" != "$old_started_at" ] && [ "$status" = "healthy" ]; then
+      WAIT_HEALTHY_SECONDS=$waited
+      return 0
+    fi
+    if [ "$waited" -ge "$timeout" ]; then
+      WAIT_HEALTHY_SECONDS=$waited
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+
 # write_report <id> <requirement> <OK|FAIL> <duration_s> <proof>
 # Ecrit reports/<id>.json : { id, requirement, result, duration_s, proof }
 write_report() {

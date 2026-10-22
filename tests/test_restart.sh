@@ -21,7 +21,7 @@ docker compose exec -T mc sh -c 'pkill -9 java' >/dev/null
 echo "Process java tue dans le conteneur mc (crash simule), attente du retour a l'etat healthy (seuil ${THRESHOLD_S}s)..."
 
 result="OK"
-if wait_healthy mc "$THRESHOLD_S"; then
+if wait_restarted_and_healthy mc "$THRESHOLD_S"; then
   duration=$WAIT_HEALTHY_SECONDS
 else
   duration=$WAIT_HEALTHY_SECONDS

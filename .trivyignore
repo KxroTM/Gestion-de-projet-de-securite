@@ -1,0 +1,31 @@
+# Risques CRITICAL acceptes et documentes (voir README.md, section "Vulnerabilites
+# connues et acceptees"). Chaque entree = aucun tag Docker fige ne corrige le CVE a
+# ce jour (verifie le 2026-10-22) ; a retirer de ce fichier dès qu'un nouveau tag
+# date corrige le probleme.
+#
+# -- itzg/minecraft-server:2026.10.0-java25 : couche OS (linux-libc-dev) --
+# Seul le tag flottant "java25" a ete reconstruit avec le correctif noyau ; pas de
+# tag date equivalent publie. Risque pratique quasi nul ici : ces CVE necessitent
+# KVM imbriqué, materiel RDMA/InfiniBand ou une cible NVMe-over-TCP, rien de tout
+# ca n'est utilise par cette stack.
+CVE-2026-53398
+CVE-2026-63940
+CVE-2026-64535
+CVE-2026-64564
+CVE-2026-72399
+CVE-2026-74345
+CVE-2026-74394
+
+# -- BouncyCastle 1.84 dans le jar Paper 26.1.2 build 74 --
+# Paper a cesse de builder la 26.1.2 (remplacee par 26.2/26.3, elles-memes non
+# supportees par mineflayer a ce jour) : build 74 est final, aucun correctif ne
+# viendra sur cette version. Risque limite : BouncyCastle n'est pas le mecanisme
+# de chiffrement principal du protocole Minecraft, juste une dependance embarquee.
+CVE-2026-8763
+
+# -- Go stdlib (crypto/tls) dans itzg/mc-backup:2026.10.1 --
+# Aucune nouvelle version de l'image publiee depuis. Sans impact en local/CI (pas
+# de connexion TLS sortante, depot restic sur volume local). En production avec
+# Backblaze B2, le contenu des sauvegardes reste protege par le chiffrement restic
+# independamment du TLS ; seule l'integrite du transport serait exposee a un MITM.
+CVE-2025-68121
