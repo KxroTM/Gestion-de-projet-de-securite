@@ -1,0 +1,5 @@
+# Faux token GitHub code en dur par erreur dans un commit passe (tests/test_secrets_detection.sh,
+# commit 4f95f9a) avant d'etre corrige pour etre genere a l'execution. Jamais un vrai
+# secret, jamais utilisable (token invente aleatoirement pour tester gitleaks lui-meme).
+# Conserve ici plutot que de reecrire l'historique deja pousse.
+4f95f9aeba15b244d6879fe5494a6a9c19d9a88d:tests/test_secrets_detection.sh:github-pat:25

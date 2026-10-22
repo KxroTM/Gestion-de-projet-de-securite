@@ -17,13 +17,14 @@ proof_lines=()
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-# Faux token GitHub (regle "github-pat" de gitleaks). On evite expres le celebre
-# AKIAIOSFODNN7EXAMPLE de la doc AWS : la regle par defaut de gitleaks a une liste
-# blanche sur tout ce qui se termine par "EXAMPLE" pour eviter les faux positifs
-# sur la documentation AWS, donc ce format ne serait jamais detecte.
-cat > "$TMP_DIR/leak.env" <<'EOF'
-GITHUB_TOKEN=ghp_WzFgxTkBE53S530nsjNeadM6IQWchvpik7Sl
-EOF
+# Faux token GitHub (regle "github-pat" de gitleaks), genere a l'execution : il ne
+# doit JAMAIS etre une chaine codee en dur dans ce script, sinon le scan gitleaks
+# du vrai historique du depot (job "secrets") le detecterait lui-meme comme une
+# fuite reelle a chaque run. On evite aussi expres le celebre AKIAIOSFODNN7EXAMPLE
+# de la doc AWS : la regle par defaut de gitleaks a une liste blanche sur tout ce
+# qui se termine par "EXAMPLE", ce format ne serait donc jamais detecte.
+fake_token="ghp_$(python3 -c 'import random, string; print("".join(random.choices(string.ascii_letters + string.digits, k=36)))')"
+echo "GITHUB_TOKEN=$fake_token" > "$TMP_DIR/leak.env"
 
 if gitleaks_output="$(MSYS_NO_PATHCONV=1 docker run --rm -v "$TMP_DIR:/scan" "$GITLEAKS_IMAGE" detect --source=/scan --no-git --no-banner -v 2>&1)"; then
   gitleaks_exit=0
