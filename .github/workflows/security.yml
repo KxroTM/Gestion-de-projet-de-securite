@@ -2,6 +2,7 @@ name: security
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 env:
@@ -11,6 +12,9 @@ env:
 jobs:
   secrets:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout (historique complet)
         uses: actions/checkout@v7.0.1
