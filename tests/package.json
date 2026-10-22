@@ -1,0 +1,13 @@
+{
+  "name": "minecraft-noel-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Tests de securite automatiques pour la stack minecraft-noel",
+  "type": "commonjs",
+  "scripts": {
+    "test:whitelist": "node test_whitelist.js"
+  },
+  "dependencies": {
+    "mineflayer": "4.39.0"
+  }
+}

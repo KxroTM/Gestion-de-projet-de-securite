@@ -1,0 +1,145 @@
+name: security
+
+on:
+  push:
+  pull_request:
+
+env:
+  MC_IMAGE: itzg/minecraft-server:2026.10.0-java25
+  BACKUP_IMAGE: itzg/mc-backup:2026.10.1
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (historique complet)
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Trivy - itzg/minecraft-server
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.MC_IMAGE }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Trivy - itzg/mc-backup
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.BACKUP_IMAGE }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  stack:
+    needs: [secrets, images]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Installer nmap
+        run: sudo apt-get update && sudo apt-get install -y nmap
+
+      - name: Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "24.14.0"
+
+      - name: Cache node_modules
+        uses: actions/cache@v6.1.0
+        with:
+          path: tests/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('tests/package-lock.json') }}
+
+      - name: Installer les dependances des tests
+        working-directory: tests
+        run: npm ci
+
+      - name: Cache des images Docker (Paper + mc-backup)
+        id: docker-cache
+        uses: actions/cache@v6.1.0
+        with:
+          path: /tmp/docker-cache
+          key: docker-images-${{ runner.os }}-${{ env.MC_IMAGE }}-${{ env.BACKUP_IMAGE }}
+
+      - name: Charger les images depuis le cache
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: |
+          docker load -i /tmp/docker-cache/mc.tar
+          docker load -i /tmp/docker-cache/backup.tar
+
+      - name: Telecharger les images (cache absent)
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          docker pull "$MC_IMAGE"
+          docker pull "$BACKUP_IMAGE"
+          mkdir -p /tmp/docker-cache
+          docker save "$MC_IMAGE" -o /tmp/docker-cache/mc.tar
+          docker save "$BACKUP_IMAGE" -o /tmp/docker-cache/backup.tar
+
+      - name: Generer .env (mots de passe a la volee, aucun secret GitHub requis)
+        run: |
+          {
+            echo "RCON_PASSWORD=$(openssl rand -hex 24)"
+            echo "RESTIC_PASSWORD=$(openssl rand -hex 24)"
+            echo "RESTIC_REPOSITORY="
+            echo "B2_ACCOUNT_ID="
+            echo "B2_ACCOUNT_KEY="
+          } > .env
+
+      - name: Demarrer la stack (docker compose up)
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+
+      - name: Attendre l'etat healthy du serveur mc
+        run: |
+          for _ in $(seq 1 90); do
+            health="$(docker inspect -f '{{.State.Health.Status}}' mc 2>/dev/null || echo missing)"
+            if [ "$health" = "healthy" ]; then
+              echo "mc est healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "mc n'est jamais devenu healthy" >&2
+          docker compose logs mc
+          exit 1
+
+      - name: Lancer les tests de securite (1 a 5)
+        run: |
+          bash tests/test_ports.sh || true
+          node tests/test_whitelist.js || true
+          bash tests/test_restart.sh || true
+          bash tests/test_backup_restore.sh || true
+          bash tests/test_encryption.sh || true
+
+      - name: Ecrire le recapitulatif et determiner le resultat final
+        if: always()
+        env:
+          IMAGES_JOB_RESULT: ${{ needs.images.result }}
+        run: python3 tests/lib/write_summary.py
+
+      - name: Publier reports/ en artefact
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: reports
+          path: reports/
+
+      - name: Arreter la stack (toujours)
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v

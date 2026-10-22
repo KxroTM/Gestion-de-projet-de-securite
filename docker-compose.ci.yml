@@ -1,0 +1,18 @@
+services:
+  mc:
+    environment:
+      MEMORY: "1536M"
+
+  backup:
+    environment:
+      # Depot restic local (pas de Backblaze B2 en CI) : on ecrase B2_* pour eviter
+      # toute dependance a un secret GitHub.
+      RESTIC_REPOSITORY: "/restic-repo"
+      B2_ACCOUNT_ID: ""
+      B2_ACCOUNT_KEY: ""
+      BACKUP_INTERVAL: "24h"
+    volumes:
+      - restic_repo:/restic-repo
+
+volumes:
+  restic_repo:
