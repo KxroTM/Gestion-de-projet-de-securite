@@ -135,6 +135,9 @@ jobs:
           docker compose logs mc
           exit 1
 
+      - name: Appliquer la config AuthMe (E07)
+        run: bash scripts/apply-authme-config.sh
+
       - name: Lancer les tests de securite
         run: |
           bash tests/test_ports.sh || true

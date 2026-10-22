@@ -22,10 +22,6 @@ services:
       - "25565:25565"
     volumes:
       - mc_data:/data
-      # AuthMe (E07) : desactive les dialogues graphiques pre-join/post-join (necessitent
-      # un vrai client 1.21.11+/Paper) au profit du flux classique par chat (/login, /register),
-      # seul compatible avec un bot headless comme mineflayer.
-      - ./config/authme-config.yml:/data/plugins/AuthMe/config.yml
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mc-health"]

@@ -19,6 +19,7 @@ docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
 # Backblaze B2 necessaire pour tester) et reduit la RAM allouee au serveur.
 
 docker compose ps   # attendre que "mc" soit "healthy"
+bash scripts/apply-authme-config.sh   # desactive les dialogues graphiques AuthMe (E07)
 
 cd tests && npm ci && cd ..
 bash tests/test_ports.sh
@@ -90,14 +91,25 @@ Chaque joueur doit s'enregistrer/se connecter (`/register`, `/login <mot de pass
 tant qu'il ne l'a pas fait, le chat (et plus généralement l'interaction) est refusé,
 et un mauvais mot de passe entraîne un kick immédiat (`kickOnWrongPassword: true`).
 
-**Piège rencontré** : AuthMe 6.x affiche par défaut une boîte de dialogue graphique
+**Piège n°1** : AuthMe 6.x affiche par défaut une boîte de dialogue graphique
 pendant la phase de pré-connexion (`dialog.preJoin.enable: true`, fonctionnalité
 native Paper/Folia 1.21.11+). Un bot headless comme mineflayer ne peut pas répondre
 à ce dialogue : la connexion reste bloquée indéfiniment et l'événement `spawn` ne se
 déclenche jamais. `config/authme-config.yml` désactive `dialog.preJoin.enable` et
 `dialog.postJoin.enable` pour revenir au flux classique par chat, seul testable avec
-un bot. Ce fichier est monté directement sur `/data/plugins/AuthMe/config.yml`
-(remplace la config auto-générée par le plugin au premier démarrage).
+un bot.
+
+**Piège n°2** : ce fichier n'est **pas** monté directement en volume sur
+`/data/plugins/AuthMe/config.yml` dans `docker-compose.yml`. Au premier démarrage
+(volume vide), Docker crée les dossiers intermédiaires manquants du point de montage
+en tant que *root*, avant que le conteneur (qui tourne en uid 1000) ne démarre :
+`/data/plugins/` devient alors illisible pour le serveur, qui ne peut plus écrire
+même le `.jar` téléchargé (`AccessDeniedException`). La config est donc appliquée
+**après coup**, une fois qu'AuthMe a déjà créé son dossier avec les bonnes
+permissions au démarrage normal : `scripts/apply-authme-config.sh` fait
+`docker compose cp` puis `/authme reload` par RCON. Appelé automatiquement en CI
+juste après que `mc` soit `healthy` ; à lancer manuellement en local (voir
+ci-dessous).
 
 ## Tests et correspondance avec les exigences
 
