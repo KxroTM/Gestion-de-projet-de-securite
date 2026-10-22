@@ -26,6 +26,7 @@ bash tests/test_restart.sh
 bash tests/test_backup_restore.sh
 bash tests/test_encryption.sh
 bash tests/test_secrets_detection.sh
+bash tests/test_backup_frequency.sh   # ~5 min, verifie le planificateur de sauvegardes
 
 docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v
 ```
@@ -90,6 +91,7 @@ correspondance), ce qui est normal.
 | DS07     | `tests/test_backup_restore.sh` | Même test : empreinte SHA-256 du monde identique avant/après restauration, bloc témoin retrouvé par RCON. |
 | DS03     | `tests/test_encryption.sh`   | `restic snapshots` échoue avec un mauvais mot de passe ; le nom du niveau n'apparaît en clair dans aucun fichier du dépôt restic. |
 | DS05     | `tests/test_secrets_detection.sh` | Un faux token GitHub injecté dans un dossier de test est bien détecté par gitleaks (contrôle actif de la détection, en plus du job `secrets` qui scanne le vrai historique à chaque push). |
+| E08 / DS01 | `tests/test_backup_frequency.sh` | Avec un intervalle réduit à 1 min le temps du test, au moins 4 sauvegardes automatiques (pas de déclenchement manuel) apparaissent en ~5 min, espacées d'environ 1 min — prouve que le planificateur fonctionne sans attendre 24h. |
 
 Chaque test a été vérifié "cassable" pendant le développement (ex. publier le port
 RCON fait échouer DS09, whitelister l'intrus fait échouer E06, désynchroniser le
@@ -187,6 +189,6 @@ et visible dans Settings → Branches, simplement non contraignante pour l'admin
 
 ## Critère de fin
 
-Pipeline entièrement vert sur `main`, récapitulatif à 7 lignes "OK" (DS09, E06, E09,
-E08, DS07, DS03, DS05), et chaque test déjà vu en échec au moins une fois pendant le
+Pipeline entièrement vert sur `main`, récapitulatif à 8 lignes "OK" (DS09, E06, E09,
+E08, DS07, DS03, DS05, E08/DS01), et chaque test déjà vu en échec au moins une fois pendant le
 contrôle de non-triche décrit plus haut.

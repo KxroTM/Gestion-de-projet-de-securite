@@ -18,6 +18,7 @@ ROWS = [
     ("DS07", "test_backup_restore.sh", "backup_restore"),
     ("DS03", "test_encryption.sh", "encryption"),
     ("DS05", "test_secrets_detection.sh", "secrets_detection"),
+    ("E08 / DS01", "test_backup_frequency.sh", "backup_frequency"),
 ]
 
 

@@ -143,6 +143,7 @@ jobs:
           bash tests/test_backup_restore.sh || true
           bash tests/test_encryption.sh || true
           bash tests/test_secrets_detection.sh || true
+          bash tests/test_backup_frequency.sh || true
 
       - name: Ecrire le recapitulatif et determiner le resultat final
         if: always()
